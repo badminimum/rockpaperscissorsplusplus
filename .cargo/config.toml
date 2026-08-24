@@ -1,0 +1,81 @@
+# ==============================================================================
+# Production-Grade Cargo Configuration (.cargo/config.toml)
+# Target Toolchain: Rust 1.98.0 / Cargo 1.98.0 (2026-08)
+# ==============================================================================
+
+# --- Build Execution & Overrides ---
+[build]
+# Treat documentation warnings as errors globally to prevent dead links in CI
+rustdocflags = ["-D", "warnings"]
+
+# --- Global Cargo Environment ---
+[env]
+CARGO_TERM_COLOR = "always" # Enforces colored output in CI pipelines and terminals
+RUST_BACKTRACE = "1"        # Enables stack traces on panics globally for easier debugging
+
+# --- Networking ---
+[net]
+git-fetch-with-cli = true   # Uses system Git to fetch dependencies (bypasses potential libgit2 SSH auth issues)
+
+# ==============================================================================
+# Cross-Compilation & Target-Specific Linker Settings
+# ==============================================================================
+
+# --- Linux (GNU & musl) ---
+# Prioritizes `mold` for ultra-fast parallel linking on Linux.
+# Requires installing mold and a C-compiler frontend (e.g., `sudo apt install mold clang`).
+[target.'cfg(target_os = "linux")']
+linker = "clang"
+rustflags = ["-C", "link-arg=-fuse-ld=mold"]
+
+# --- Windows (MSVC) ---
+# Uses `rust-lld` (LLVM's linker bundled with Rust) for significantly faster link times
+# than MSVC's default `link.exe`.
+[target.'cfg(target_os = "windows")']
+rustflags = ["-C", "linker=rust-lld"]
+
+# --- Android ---
+# Uses LLD for Android cross-compilation. Note: The NDK paths usually require
+# environment variables or explicit `.cargo/config.toml` hardcoded paths for the linker itself.
+[target.'cfg(target_os = "android")']
+rustflags = ["-C", "link-arg=-fuse-ld=lld"]
+
+# --- WebAssembly ---
+# Traps on panics instead of unwinding to heavily reduce Wasm binary bloat.
+[target.wasm32-unknown-unknown]
+rustflags = ["-C", "panic=abort"]
+
+# ==============================================================================
+# Global Rustc Flags & Clippy Rules
+# ==============================================================================
+[target.'cfg(all())']
+rustflags = [
+    # --- Performance & Symbol Generation ---
+    "-C", "force-frame-pointers=yes",   # Retains frame pointers for accurate CPU profiling (perf, flamegraphs)
+    "-C", "symbol-mangling-version=v0", # Uses modern v0 mangling for better symbol demangling in debuggers
+
+    # --- Rustc Core Safety & Style ---
+    "-Dunsafe_code",                   # Deny unsafe code by default (use #![allow(unsafe_code)] per-file if absolutely necessary)
+    "-Wrust_2018_idioms",              # Enforce modern idioms
+    "-Wmissing_debug_implementations", # Ensure types can be printed/debugged
+    "-Wmissing_docs",                  # Enforce documentation for public APIs
+
+    # --- Clippy Strictness ---
+    "-Wclippy::all",
+    "-Wclippy::pedantic",
+    "-Wclippy::nursery",
+    "-Wclippy::cargo",
+
+    # --- Targeted Restrictions (Catch real bugs) ---
+    "-Wclippy::unwrap_used",           # Force explicit error handling; ban unwrap()
+    "-Wclippy::expect_used",           # Force explicit error handling; ban expect()
+    "-Wclippy::clone_on_ref_ptr",      # Require `Arc::clone(&foo)` instead of `foo.clone()` for clarity
+    "-Wclippy::todo",                  # Prevent `todo!` macros from leaking into production
+    "-Wclippy::unimplemented",         # Prevent `unimplemented!` from leaking into production
+
+    # --- Pragmatic Allowances (Day-to-day development) ---
+    "-Aclippy::module_name_repetitions", # Allowed: Domain/DomainError is fine, strict naming is too pedantic
+    "-Aclippy::missing_errors_doc",      # Allowed: Can be too noisy for internal binary projects
+    "-Aclippy::multiple_crate_versions", # Allowed: We handle this strictly in cargo-deny instead
+    "-Aclippy::future_not_send",         # Allowed: Too noisy in async code; the compiler will block non-Send futures across await points anyway
+]

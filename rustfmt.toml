@@ -1,0 +1,19 @@
+# --- Target Rust Edition & Engine Version ---
+edition = "2024"
+version = "Two"                    # Enforces modern Rust v2 formatting rules
+
+# --- Layout & Line Endings ---
+max_width = 100                    # Restricts line width to 100 characters for side-by-side diff readability
+newline_style = "Unix"             # Enforces LF line endings to prevent cross-platform Git diff noise
+use_small_heuristics = "Max"       # Compacts small expressions onto single lines when space permits
+
+# --- Idiomatic Rust Shorthand Rules ---
+use_field_init_shorthand = true    # Enforces `Point { x, y }` over redundant `Point { x: x, y: y }`
+use_try_shorthand = true           # Enforces `?` operator over legacy `try!()` macro
+
+# --- Code in Documentation ---
+format_code_in_doc_comments = true # Formats Rust code blocks inside `///` doc comments
+
+# --- Import & Module Sorting ---
+reorder_imports = true              # Alphabetizes `use` statements within groups
+reorder_modules = true              # Alphabetizes `mod` declarations

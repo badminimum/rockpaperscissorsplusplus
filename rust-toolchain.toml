@@ -1,0 +1,29 @@
+# ==============================================================================
+# Production-Grade Rust Toolchain Pinning (rust-toolchain.toml)
+# Target Toolchain: Rust 1.98.0 (2026-08)
+# ==============================================================================
+
+[toolchain]
+# Pins the exact toolchain version for team-wide build reproducibility
+channel = "1.98.0"
+
+# Minimal profile speeds up CI installations by skipping non-essential binaries (e.g., rust-docs)
+profile = "minimal"
+
+# Explicitly required compiler components and dev utilities
+components = [
+    "rustfmt",      # Enforces consistent formatting across the codebase
+    "clippy",       # Linter for catching idiomatic Rust anti-patterns
+    "llvm-tools",   # Needed for code coverage (cargo-llvm-cov) and profiling
+    "rust-src"      # Required for rust-analyzer auto-complete and std re-compilation
+]
+
+# Pre-installed standard library targets for multi-target cross-compilation workflows
+targets = [
+    "x86_64-unknown-linux-gnu",    # Standard Linux target
+    "x86_64-unknown-linux-musl",   # Statically linked Linux binaries
+    "aarch64-unknown-linux-gnu",   # ARM64 Linux / AWS Graviton target
+    "x86_64-pc-windows-msvc",      # Native 64-bit Windows target
+    "wasm32-unknown-unknown",      # WebAssembly compilation
+    "aarch64-linux-android"        # Mobile ARM64 Android target
+]

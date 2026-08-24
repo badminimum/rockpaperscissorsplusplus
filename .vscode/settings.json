@@ -1,0 +1,40 @@
+// ==============================================================================
+// OPTIONAL: VS Code / rust-analyzer Workspace Configuration (.vscode/settings.json)
+// Target Toolchain: Rust 1.98.0 / rust-analyzer (2026-08)
+// Note: This file is purely optional for VS Code users. Core workspace rules
+// remain editor-agnostic in rustfmt.toml, .clippy.toml, .cargo/config.toml, etc.
+// ==============================================================================
+{
+  // --- Formatter & Editor Integration ---
+  "editor.formatOnSave": true,
+  "[rust]": {
+    "editor.defaultFormatter": "rust-lang.rust-analyzer",
+    "editor.formatOnSave": true
+  },
+
+  // --- Real-Time Diagnostics & Clippy Integration ---
+  "rust-analyzer.check.command": "clippy",                 // Runs `cargo clippy` instead of `cargo check` on file save
+  "rust-analyzer.check.allTargets": true,                  // Checks binaries, tests, benchmarks, and examples
+  "rust-analyzer.check.extraArgs": [
+    "--no-deps"                                            // Limits Clippy checks to workspace crates to avoid re-checking dependencies
+  ],
+
+  // --- Procedural Macros & Build Scripts ---
+  "rust-analyzer.cargo.buildScripts.enable": true,         // Executes build.rs scripts to expand generated code/bindings
+  "rust-analyzer.procMacro.enable": true,                  // Enables procedural macro expansion for proper IDE type resolution
+
+  // --- Import Normalization & Auto-Imports ---
+  "rust-analyzer.imports.granularity.group": "crate",      // Aligns IDE auto-imports with workspace rustfmt (`imports_granularity = "Crate"`)
+  "rust-analyzer.imports.prefix": "crate",                 // Prefixes internal module imports with `crate::`
+
+  // --- Inlay Hints & Code Readability ---
+  "rust-analyzer.inlayHints.chainingHints.enable": true,   // Shows types for chained method calls (e.g. iterator chains)
+  "rust-analyzer.inlayHints.parameterHints.enable": true,  // Displays parameter name labels at function call sites
+  "rust-analyzer.inlayHints.typeHints.enable": true,       // Displays inferred variable types inline
+  "rust-analyzer.inlayHints.typeHints.hideNamedConstructor": true, // Hides redundant hints like `let p: Point = Point::new()`
+  "rust-analyzer.inlayHints.closingBraceHints.minLines": 25, // Appends function/struct labels to long closing braces
+  "rust-analyzer.inlayHints.lifetimeElisionHints.enable": "skip_trivial", // Highlights non-trivial lifetime elisions
+
+  // --- Workspace Search & Indexing Performance ---
+  "rust-analyzer.workspace.symbol.search.scope": "workspace" // Restricts symbol searches to workspace code (excluding external crates)
+}

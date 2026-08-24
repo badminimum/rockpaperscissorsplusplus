@@ -1,0 +1,38 @@
+# ==============================================================================
+# EditorConfig Configuration (.editorconfig)
+# Target Toolchain: Rust 1.98.0 Workspace (2026-08)
+# ==============================================================================
+
+# Declares this as the root configuration file, preventing editors from searching parent directories
+root = true
+
+# --- Global Default Rules ---
+[*]
+charset = utf-8                         # Enforces UTF-8 encoding across all text files
+end_of_line = lf                        # Enforces Unix-style (LF) line endings (aligns with rustfmt.toml)
+insert_final_newline = true             # Ensures files end with a newline per POSIX standard to avoid Git diff noise
+trim_trailing_whitespace = true         # Automatically removes useless trailing spaces on save
+
+# --- Rust Source Code ---
+[*.rs]
+indent_style = space                    # Enforces space indentation per idiomatic Rust standards
+indent_size = 4                         # 4-space indentation strictly matching rustfmt
+max_line_length = 100                   # Matches `max_width = 100` setting in rustfmt.toml
+
+# --- Configuration, Data & Web Files ---
+[*.{toml,yml,yaml,json,jsonc}]
+indent_style = space
+indent_size = 2                         # 2-space indentation standard for TOML, YAML, and JSON metadata
+
+# --- Shell Scripts ---
+[*.sh]
+indent_style = space
+indent_size = 2
+
+# --- Build Automation ---
+[Makefile]
+indent_style = tab                      # Makefiles strictly require hard TAB characters for execution recipes
+
+# --- Documentation ---
+[*.md]
+trim_trailing_whitespace = false        # Preserves intentional double-spaces used for soft line breaks in Markdown

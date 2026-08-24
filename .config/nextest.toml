@@ -1,0 +1,46 @@
+# ==============================================================================
+# Production-Grade cargo-nextest Configuration (.config/nextest.toml)
+# Target Toolchain: Rust 1.98.0 / Cargo 1.98.0 (2026-08)
+# ==============================================================================
+
+[store]
+dir = "target/nextest"                   # Root directory where nextest stores execution metadata and reports
+
+# --- Default Profile (Local Development) ---
+[profile.default]
+fail-fast = false                       # Runs all tests in the workspace to give a full picture of failures
+test-threads = "num-cpus"               # Utilizes all available CPU cores for maximum execution speed
+status-level = "pass"                   # Displays status for passed, skipped, and failed tests
+final-status-level = "flaky"            # Summarizes flaky, failed, and retried tests at the end of execution
+
+# Execution timeouts to catch hangs and runaway threads
+slow-timeout = { period = "30s", terminate-after = 2 } # Identifies slow tests at 30s; terminates at 60s
+leak-timeout = "100ms"                  # Grace period for child processes / detached threads after test exit
+
+# --- Continuous Integration Profile ---
+# Activated via: `cargo nextest run --profile ci`
+[profile.ci]
+inherits = "default"
+fail-fast = false                       # Ensures full suite completes so CI collects a comprehensive failure report
+retries = { backoff = "exponential", count = 2, delay = "1s" } # Retries flaky I/O or network tests up to 2 times
+status-level = "skip"                   # Reduces CI log noise by suppressing individual passed test lines
+failure-output = "immediate-final"      # Prints output immediately on failure and again in the final CI summary
+
+# JUnit XML test report export for CI pipelines (GitHub Actions, GitLab CI, etc.)
+[profile.ci.junit]
+path = "junit.xml"                      # Relative to store.dir (written to target/nextest/ci/junit.xml)
+report-name = "nextest-run"
+store-success-output = false            # Omits stdout/stderr for passing tests to keep XML files compact
+
+# --- Resource-Constrained Test Groups ---
+[test-groups]
+serial = { max-threads = 1 }            # Single-threaded execution pool for stateful/contended tests
+
+# --- Per-Test Overrides ---
+[[profile.default.overrides]]
+filter = 'test(test_serial_) or test(integration_)'
+test-group = "serial"                   # Forces integration or state-heavy tests to execute one-at-a-time
+
+[[profile.default.overrides]]
+filter = 'test(test_heavy_)'
+slow-timeout = { period = "120s" }      # Extends timeout duration for heavy end-to-end integration tests

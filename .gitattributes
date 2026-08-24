@@ -1,0 +1,61 @@
+# ==============================================================================
+# Production-Grade Git Attributes (.gitattributes)
+# Target Toolchain: Rust Workspace (2026)
+# ==============================================================================
+
+# --- Global Default Line Ending Handling ---
+# Automatically detect text files and force LF line endings on checkout/commit across platforms
+* text=auto eol=lf
+
+# --- Rust Source & Workspace Configuration Files ---
+*.rs text eol=lf diff=rust
+*.toml text eol=lf
+*.md text eol=lf
+*.sh text eol=lf
+Makefile text eol=lf
+
+# --- Windows-Specific Scripts ---
+# Ensures Windows shell scripts retain required CRLF line endings
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# --- Dependency Lockfiles & Generated Code ---
+# Marks Cargo.lock as generated to collapse massive diffs in GitHub, GitLab, and Forgejo pull requests
+Cargo.lock text eol=lf linguist-generated=true
+*.pb.rs text eol=lf linguist-generated=true
+bindings.rs text eol=lf linguist-generated=true
+
+# --- Binary Assets & Compiled Artifacts ---
+# Explicitly prevents binary corruption caused by line normalization on non-text assets
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg text eol=lf
+*.wasm binary
+*.rlib binary
+*.so binary
+*.dylib binary
+*.dll binary
+*.exe binary
+*.a binary
+*.lib binary
+*.pdb binary
+*.tar.gz binary
+*.zip binary
+
+# --- GitHub / Forgejo Linguist Overrides ---
+# Accurately categorizes repository stats by marking docs and excluding generated assets
+docs/* linguist-documentation
+benches/* linguist-vendored=false
+
+# --- Release Tarball Optimization (`git archive`) ---
+# Prevents internal CI configs, editor settings, and dev tool files from inflating source tarballs
+.github export-ignore
+.vscode export-ignore
+.editorconfig export-ignore
+.gitattributes export-ignore
+.gitignore export-ignore
+deny.toml export-ignore

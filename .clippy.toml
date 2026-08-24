@@ -1,0 +1,52 @@
+# ==============================================================================
+# Production-Grade Clippy Configuration (.clippy.toml / clippy.toml)
+# Target Toolchain: Rust / Cargo / Clippy 1.98.0
+# ==============================================================================
+
+# --- Toolchain & API Compatibility ---
+msrv = "1.98"                          # Ensures Clippy suggestions align with toolchain 1.98 features
+avoid-breaking-exported-api = true     # Suppresses suggestions that would break public library APIs
+
+# --- Code Complexity & Function Structure ---
+cognitive-complexity-threshold = 15    # Enforces smaller, readable functions (default is 25)
+too-many-arguments-threshold = 5       # Limits function arguments (default is 7) to encourage config structs
+too-many-lines-threshold = 100         # Limits function length (default is 100) to keep files navigable
+struct-field-names-threshold = 8       # Flags structs with >8 fields to encourage domain-driven grouping
+
+# --- Memory & Performance Heuristics ---
+enum-variant-size-threshold = 200      # Prevents large enum variants from blowing up stack sizes
+large-error-threshold = 128            # Flags Result<T, E> where E >128 bytes to prevent return-value bloat
+array-size-threshold = 512             # Flags stack arrays >512 bytes to encourage Heap/Vec allocation
+
+# --- Test Quality & Ergonomics ---
+allow-unwrap-in-tests = true           # Permits .unwrap() in tests while keeping `unwrap_used` strict in production
+allow-expect-in-tests = true           # Permits .expect() in tests for readable test assertions
+
+# --- Documentation Formatting ---
+# Adds domain terms to `clippy::doc_markdown` to prevent false-positive backtick warnings
+doc-valid-idents = [
+    "GitHub", "GitLab", "GraphQL", "PostgreSQL", "MySQL",
+    "SQLite", "OAuth", "OpenAPI", "Protobuf", "gRPC", "WebAssembly", "Wasm", ".."
+]
+
+# --- Forbidden Macros ---
+disallowed-macros = [
+    { path = "std::println", reason = "Use the `tracing` or `log` crate for structured logging instead." },
+    { path = "std::print", reason = "Use the `tracing` or `log` crate for structured logging instead." },
+    { path = "std::dbg", reason = "dbg! should not be committed to the repository." },
+    { path = "std::eprintln", reason = "Use the `tracing` or `log` crate for structured logging instead." },
+    { path = "std::eprint", reason = "Use the `tracing` or `log` crate for structured logging instead." }
+]
+
+# --- Forbidden Types ---
+disallowed-types = [
+    { path = "std::sync::Mutex", reason = "Use `tokio::sync::Mutex` for async, or `parking_lot::Mutex` for sync code." },
+    { path = "std::sync::RwLock", reason = "Use `tokio::sync::RwLock` for async, or `parking_lot::RwLock` for sync code." }
+]
+
+# --- Forbidden Methods ---
+disallowed-methods = [
+    { path = "std::env::set_var", reason = "Environment mutation in process memory is thread-unsafe and causes race conditions." },
+    { path = "std::env::remove_var", reason = "Environment mutation in process memory is thread-unsafe and causes race conditions." },
+    { path = "std::process::exit", reason = "Bypasses RAII destructors; return errors from `main` or handle signals gracefully." }
+]

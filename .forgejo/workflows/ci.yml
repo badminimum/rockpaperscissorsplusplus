@@ -1,0 +1,140 @@
+# ==============================================================================
+# Production-Grade Forgejo / Codeberg CI Workflow (.forgejo/workflows/ci.yml)
+# Target Toolchain: Rust 1.98.0 / Cargo 1.98.0 (2026-08)
+# ==============================================================================
+
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+# Enforces explicit environment variables across all jobs
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: "1"
+
+jobs:
+  # ----------------------------------------------------------------------------
+  # Code Formatting
+  # ----------------------------------------------------------------------------
+  fmt:
+    name: Code Format
+    runs-on: docker
+    container:
+      image: rust:1.98.0-slim-bookworm
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install rustfmt
+        run: rustup component add rustfmt
+
+      - name: Verify code formatting
+        run: cargo fmt --workspace --check
+
+  # ----------------------------------------------------------------------------
+  # Static Analysis & Lints
+  # ----------------------------------------------------------------------------
+  clippy:
+    name: Clippy Lints
+    runs-on: docker
+    container:
+      image: rust:1.98.0-bookworm
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Installs mold for faster linking during compilation checks
+      - name: Install mold linker & dependencies
+        run: |
+          apt-get update && apt-get install -y mold clang
+          rustup component add clippy
+
+      - name: Cache Cargo dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Run Clippy lints
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+  # ----------------------------------------------------------------------------
+  # Dependency Security & License Auditing
+  # ----------------------------------------------------------------------------
+  deny:
+    name: Cargo Deny Audit
+    runs-on: docker
+    container:
+      image: rust:1.98.0-slim-bookworm
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Downloads pre-built cargo-deny binary directly to bypass full cargo compilation
+      - name: Install cargo-deny
+        run: |
+          apt-get update && apt-get install -y wget
+          wget -qO- https://github.com/EmbarkStudios/cargo-deny/releases/download/0.16.1/cargo-deny-0.16.1-x86_64-unknown-linux-musl.tar.gz | tar xz -C /usr/local/bin --strip-components=1
+
+      - name: Check advisories, licenses, and banned dependencies
+        run: cargo deny check
+
+  # ----------------------------------------------------------------------------
+  # Test Suite Execution
+  # ----------------------------------------------------------------------------
+  test:
+    name: Test Suite
+    runs-on: docker
+    container:
+      image: rust:1.98.0-bookworm
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install mold & cargo-nextest
+        run: |
+          apt-get update && apt-get install -y mold clang wget
+          wget -qO- https://github.com/nextest-rs/nextest/releases/download/cargo-nextest-0.9.72/cargo-nextest-0.9.72-x86_64-unknown-linux-musl.tar.gz | tar xz -C /usr/local/bin
+
+      - name: Cache Cargo dependencies
+        uses: Swatinem/rust-cache@v2
+
+      # Executes workspace test binaries in parallel via nextest
+      - name: Run tests with nextest
+        run: cargo nextest run --profile ci --workspace --all-targets
+
+      # Runs doc tests separately (nextest does not execute documentation tests)
+      - name: Run doc tests
+        run: cargo test --doc --workspace
+
+  # ----------------------------------------------------------------------------
+  # Multi-Target Cross-Compilation Verification
+  # ----------------------------------------------------------------------------
+  check-targets:
+    name: Cross Check (${{ matrix.target }})
+    runs-on: docker
+    container:
+      image: rust:1.98.0-bookworm
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - x86_64-unknown-linux-gnu
+          - x86_64-unknown-linux-musl
+          - aarch64-unknown-linux-gnu
+          - wasm32-unknown-unknown
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Add target triple
+        run: rustup target add ${{ matrix.target }}
+
+      - name: Cache Cargo dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+
+      - name: Check target compilation
+        run: cargo check --workspace --target ${{ matrix.target }}

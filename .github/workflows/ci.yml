@@ -1,0 +1,156 @@
+# ==============================================================================
+# Production-Grade Continuous Integration Workflow (.github/workflows/ci.yml)
+# Target Toolchain: Rust 1.98.0 / Cargo 1.98.0 (2026-08)
+# ==============================================================================
+
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+# Cancels in-progress runs for the same PR branch when new commits are pushed
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# Explicit minimal GITHUB_TOKEN permissions for secure execution
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: "1"
+
+jobs:
+  # ----------------------------------------------------------------------------
+  # Code Formatting
+  # ----------------------------------------------------------------------------
+  fmt:
+    name: Code Format
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@1.98.0
+        with:
+          components: rustfmt
+
+      - name: Verify code formatting
+        run: cargo fmt --workspace --check
+
+  # ----------------------------------------------------------------------------
+  # Static Analysis & Lints
+  # ----------------------------------------------------------------------------
+  clippy:
+    name: Clippy Lints
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Uses mold linker on Linux runner to drastically reduce compilation/link time
+      - name: Install mold linker
+        uses: taiki-e/install-action@v2
+        with:
+          tool: mold
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@1.98.0
+        with:
+          components: clippy
+
+      - name: Cache Cargo dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Run Clippy lints
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+  # ----------------------------------------------------------------------------
+  # Dependency Security & License Auditing
+  # ----------------------------------------------------------------------------
+  deny:
+    name: Cargo Deny Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install cargo-deny
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-deny
+
+      - name: Check advisories, licenses, and banned dependencies
+        run: cargo deny check
+
+  # ----------------------------------------------------------------------------
+  # Test Suite Execution
+  # ----------------------------------------------------------------------------
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install mold & nextest
+        uses: taiki-e/install-action@v2
+        with:
+          tool: mold,cargo-nextest
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@1.98.0
+
+      - name: Cache Cargo dependencies
+        uses: Swatinem/rust-cache@v2
+
+      # Runs unit and integration tests in parallel using nextest profile
+      - name: Run tests with nextest
+        run: cargo nextest run --profile ci --workspace --all-targets
+
+      # Runs doc tests separately (nextest does not execute documentation tests)
+      - name: Run doc tests
+        run: cargo test --doc --workspace
+
+  # ----------------------------------------------------------------------------
+  # Multi-Target Cross-Compilation Verification
+  # ----------------------------------------------------------------------------
+  check-targets:
+    name: Cross Check (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: wasm32-unknown-unknown
+            os: ubuntu-latest
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@1.98.0
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Cache Cargo dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+
+      - name: Check target compilation
+        run: cargo check --workspace --target ${{ matrix.target }}

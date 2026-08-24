@@ -1,0 +1,67 @@
+# ==============================================================================
+# Production-Grade cargo-deny Configuration (deny.toml)
+# Target Toolchain: Rust 1.98.0 / Cargo 1.98.0 (2026-08)
+# ==============================================================================
+
+# --- Graph Options ---
+[graph]
+targets = []                            # Checks all targets by default unless restricted
+all-features = false                    # Uses default build flags for dependency resolution
+
+# --- Advisory Checking ---
+[advisories]
+vulnerability = "deny"                  # Fails CI on known security vulnerabilities (RUSTSEC)
+unmaintained = "warn"                   # Warns on crates flagged as unmaintained
+unsound = "deny"                        # Fails CI on crates flagged for memory/thread unsoundness
+notice = "warn"                         # Warns on general security notices
+yanked = "deny"                         # Prevents building against crates yanked from registry
+ignore = []                             # Advisory IDs to temporarily bypass (e.g., "RUSTSEC-2024-0000")
+
+# --- License Compliance ---
+[licenses]
+unlicensed = "deny"                     # Rejects crates lacking an explicit license file/SPDX tag
+copyleft = "deny"                       # Strictly denies copyleft licenses (GPL, AGPL) to prevent legal risk
+allow-osi-fsf-free = "neither"          # Forces licenses to be explicitly listed in `allow`
+confidence-threshold = 0.8              # Sets detection confidence threshold (0.8 avoids false negatives)
+
+# Permitted open-source licenses for internal & commercial dependencies
+allow = [
+    "MIT",                              # Standard permissive license
+    "Apache-2.0",                       # Standard permissive license with patent grant
+    "Apache-2.0 WITH LLVM-exception",   # Required by compiler-builtins and low-level runtime crates
+    "BSD-2-Clause",                     # Permissive BSD 2-clause
+    "BSD-3-Clause",                     # Permissive BSD 3-clause
+    "ISC",                              # Permissive ISC license
+    "Zlib",                             # Permissive Zlib license
+    "0BSD",                             # Permissive Zero-Clause BSD
+    "Unicode-3.0",                      # Required by unicode-ident and syntax crates
+    "CC0-1.0",                          # Public domain dedication
+    "Unlicense"                         # Public domain equivalent
+]
+
+# --- Banned Crates & Duplicates ---
+[bans]
+multiple-versions = "warn"              # Warns on duplicate crate versions in dependency graph
+wildcards = "deny"                      # Denies wildcard dependency requirements (e.g. `*`) to guarantee reproducible builds
+highlight = "all"                       # Visualizes tree paths for both shortest and lowest version duplicates
+
+deny = [
+    # Banned in favor of `rustls` for memory safety and easy C-toolchain-free cross-compilation
+    { name = "openssl", reason = "Use `rustls` instead to avoid native C dependencies and memory safety issues." },
+
+    # Banned in favor of Rust standard library features (`std::sync::LazyLock`)
+    { name = "lazy_static", reason = "Use `std::sync::LazyLock` instead." },
+
+    # Banned deprecated ecosystem crates
+    { name = "failure", reason = "Deprecated; use `thiserror` for libraries or `anyhow` for applications." },
+    { name = "structopt", reason = "Deprecated; use `clap` v4+ with the `derive` feature instead." }
+]
+
+# --- Registry & Repository Sources ---
+[sources]
+unknown-registry = "deny"               # Rejects crates from unapproved third-party package registries
+unknown-git = "deny"                    # Rejects crates pulled from unapproved git repositories
+allow-registry = [                      # Whitelists official Rust crates.io registry
+    "https://github.com/rust-lang/crates.io-index"
+]
+allow-git = []                          # Forces explicit opt-in if git dependencies are required

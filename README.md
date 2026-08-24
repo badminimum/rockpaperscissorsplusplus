@@ -116,14 +116,6 @@ If the project prefers classic Woodpecker CI on Codeberg instead of (or in addit
 </details>
 
 <details>
-<summary>.gitignore</summary>
-
-```md
-Provide an improved production-grade .gitignore tailored for a modern multi-crate Rust workspace with multi-target builds, Android, Windows, Linux, wasm, CI artifacts, and editor files. Cover target/, Cargo.lock rules if needed, IDE folders, OS junk, mold/lld caches, and common secrets or local overrides. Keep it comprehensive yet not overly aggressive. Explain any non-obvious entries with a short comment. Output the complete ready-to-use file contents only. I will attach my current .gitignore if I have one.
-```
-</details>
-
-<details>
 <summary>PR / branch protection notes (documentation)</summary>
 
 ```md
