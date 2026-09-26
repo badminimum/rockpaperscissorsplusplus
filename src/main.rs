@@ -8,7 +8,7 @@ use std::{
 };
 
 use rand::RngExt;
-use tracing::{debug, info};
+use tracing::debug;
 
 use crate::{concept::Concept, registry::ConceptRegistry};
 
@@ -102,11 +102,13 @@ fn game_loop(running: Arc<AtomicBool>) -> color_eyre::Result<()> {
                 }
                 (false, false) => "Nobody",
             };
+            debug!("Winner: {}", winner);
 
-            info!("You chose {}", pc.pretty_name);
-            info!("CPU chose {}", cpuc.pretty_name);
-            info!("Winner: {}", winner);
-            info!("You've won {} times, CPU has won {} times", player_wins, cpu_wins);
+            println!("You chose {}", pc.pretty_name);
+            println!("CPU chose {}", cpuc.pretty_name);
+            println!("Winner: {}", winner);
+            println!("You've won {} times, CPU has won {} times", player_wins, cpu_wins);
+            debug!("Wins: Player {}, CPU {}", player_wins, cpu_wins);
 
             cpu_concept = None;
         }

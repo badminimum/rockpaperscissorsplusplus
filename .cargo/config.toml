@@ -32,6 +32,10 @@ rustflags = ["-C", "link-arg=-fuse-ld=mold"]
 linker = "aarch64-linux-gnu-gcc"
 rustflags = ["-C", "link-arg=-fuse-ld=lld"]
 
+[target.aarch64-unknown-linux-musl]
+linker = "aarch64-linux-gnu-gcc"
+rustflags = ["-C", "link-arg=-static"]
+
 # --- Windows (MSVC) ---
 # Uses `rust-lld` (LLVM's linker bundled with Rust) for significantly faster link times
 # than MSVC's default `link.exe`.

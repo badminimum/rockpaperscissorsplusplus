@@ -20,6 +20,7 @@ TARGETS := \
 	aarch64-linux-android \
 	aarch64-pc-windows-msvc \
 	aarch64-unknown-linux-gnu \
+	aarch64-unknown-linux-musl \
 	armv7-linux-androideabi \
 	i686-linux-android \
 	wasm32-unknown-unknown \
@@ -37,12 +38,15 @@ X86_64_FLAGS := -C target-feature=+sha,+sse2,+ssse3,+sse4.1,+sse4.2,+popcnt
 ARM64_FLAGS := -C target-feature=+sha2,+aes,+neon
 ARMV7_FLAGS  := -C target-feature=+v7,+vfp3,+d16
 
-# Dynamic calculation of target-specific RUSTFLAGS (prevents leaking invalid arch flags to WASM/ARM targets)
+# Apply mold linker ONLY to Linux targets (excluding Windows MSVC and Android targets)
+LINUX_MOLD := $(if $(findstring linux-gnu,$@)$(findstring linux-musl,$@),$(MOLD_FLAG),)
+
+# Dynamic calculation of target-specific RUSTFLAGS
 SPECIFIC_FLAGS = $(strip \
-	$(if $(findstring x86_64,$@),$(X86_64_FLAGS) $(MOLD_FLAG), \
-	$(if $(findstring i686,$@),-C target-feature=+sse2, \
-	$(if $(findstring aarch64,$@),$(ARM64_FLAGS), \
-	$(if $(findstring armv7,$@),$(ARMV7_FLAGS),)))))
+    $(if $(findstring x86_64,$@),$(X86_64_FLAGS) $(LINUX_MOLD), \
+    $(if $(findstring i686,$@),-C target-feature=+sse2, \
+    $(if $(findstring aarch64,$@),$(ARM64_FLAGS) $(LINUX_MOLD), \
+    $(if $(findstring armv7,$@),$(ARMV7_FLAGS),)))))
 
 # Target routing: utilizes `cargo-xwin` for MSVC targets and native `cargo` for non-MSVC
 BUILD_CMD = $(if $(findstring msvc,$@),cargo xwin build,cargo build)
