@@ -34,7 +34,7 @@ MOLD_FLAG := $(if $(filter Linux,$(HOST_OS)),$(if $(shell command -v mold 2>/dev
 
 # Target-specific CPU feature flags tailored per target architecture
 X86_64_FLAGS := -C target-feature=+sha,+sse2,+ssse3,+sse4.1,+sse4.2,+popcnt
-ARM64_FLAGS  := -C target-feature=+sha2,+crypto,+neon
+ARM64_FLAGS := -C target-feature=+sha2,+aes,+neon
 ARMV7_FLAGS  := -C target-feature=+v7,+vfp3,+d16
 
 # Dynamic calculation of target-specific RUSTFLAGS (prevents leaking invalid arch flags to WASM/ARM targets)

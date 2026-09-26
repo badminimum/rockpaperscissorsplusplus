@@ -1,0 +1,23 @@
+[package]
+name = "rock_paper_scissors"
+version = "1.0.0"
+edition = "2024"
+description = "Extendable Rock Paper Scissors!"
+license = "MIT"
+authors = ["badminimum"]
+repository = "https://github.com/badminimum/rockpaperscissorsplusplus"
+keywords = ["game", "rock-paper-scissors", "cli"]
+categories = ["games", "command-line-utilities"]
+
+[dependencies]
+color-eyre = "0.6.5"
+ctrlc = "3.5.2"
+indexmap = { version = "2.14.2" }
+rand = "0.10.3"
+rayon = "1.12.0"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+tracing = "0.1.44"
+tracing-appender = "0.2.5"
+tracing-error = "0.2.1"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }

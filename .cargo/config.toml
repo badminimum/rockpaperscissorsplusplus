@@ -28,6 +28,10 @@ git-fetch-with-cli = true   # Uses system Git to fetch dependencies (bypasses po
 linker = "clang"
 rustflags = ["-C", "link-arg=-fuse-ld=mold"]
 
+[target.aarch64-unknown-linux-gnu]
+linker = "aarch64-linux-gnu-gcc"
+rustflags = ["-C", "link-arg=-fuse-ld=lld"]
+
 # --- Windows (MSVC) ---
 # Uses `rust-lld` (LLVM's linker bundled with Rust) for significantly faster link times
 # than MSVC's default `link.exe`.
